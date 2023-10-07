@@ -15,12 +15,12 @@ import (
 )
 
 func init() {
-	caddy.RegisterModule(MatchDynamicClientIP{})
+	caddy.RegisterModule(MatchDynamicRemoteIP{})
 }
 
-// MatchDynamicClientIP matchers the requests by the client IP address.
+// MatchDynamicRemoteIP matchers the requests by the remote IP address.
 // The IP ranges are provided by modules to allow for dynamic ranges.
-type MatchDynamicClientIP struct {
+type MatchDynamicRemoteIP struct {
 	// A module which provides a source of IP ranges, from which
 	// requests are matched.
 	ProvidersRaw json.RawMessage         `json:"providers,omitempty" caddy:"namespace=http.ip_sources inline_key=source"`
@@ -29,16 +29,16 @@ type MatchDynamicClientIP struct {
 	logger *zap.Logger
 }
 
-func (MatchDynamicClientIP) CaddyModule() caddy.ModuleInfo {
+func (MatchDynamicRemoteIP) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID: "http.matchers.dynamic_client_ip",
+		ID: "http.matchers.dynamic_remote_ip",
 		New: func() caddy.Module {
-			return new(MatchDynamicClientIP)
+			return new(MatchDynamicRemoteIP)
 		},
 	}
 }
 
-func (m *MatchDynamicClientIP) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
+func (m *MatchDynamicRemoteIP) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	d.Next() // consume the directive name
 
 	if !d.NextArg() {
@@ -68,7 +68,7 @@ func (m *MatchDynamicClientIP) UnmarshalCaddyfile(d *caddyfile.Dispenser) error 
 	return nil
 }
 
-func (m *MatchDynamicClientIP) Provision(ctx caddy.Context) error {
+func (m *MatchDynamicRemoteIP) Provision(ctx caddy.Context) error {
 	m.logger = ctx.Logger()
 
 	if m.ProvidersRaw != nil {
@@ -84,27 +84,27 @@ func (m *MatchDynamicClientIP) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (m MatchDynamicClientIP) Match(r *http.Request) bool {
-	address := caddyhttp.GetVar(r.Context(), caddyhttp.ClientIPVarKey).(string)
-	clientIP, err := ParseIPZoneFromString(address)
+func (m MatchDynamicRemoteIP) Match(r *http.Request) bool {
+	address := r.RemoteAddr
+	remoteIP, err := parseIPZoneFromString(address)
 
 	if err != nil {
-		m.logger.Error("getting client IP", zap.Error(err))
+		m.logger.Error("getting remote IP", zap.Error(err))
 		return false
 	}
 
-	matches := m.matchIP(r, clientIP)
+	matches := m.matchIP(r, remoteIP)
 
 	return matches
 }
 
-func ParseIPZoneFromString(address string) (netip.Addr, error) {
+func parseIPZoneFromString(address string) (netip.Addr, error) {
 	ipStr, _, err := net.SplitHostPort(address)
 	if err != nil {
 		ipStr = address // OK; probably didn't have a port
 	}
 
-	// Client IP may contain a zone if IPv6, so we need
+	// Remote IP may contain a zone if IPv6, so we need
 	// to pull that out before parsing the IP
 	ipStr, _, _ = strings.Cut(ipStr, "%")
 
@@ -116,16 +116,18 @@ func ParseIPZoneFromString(address string) (netip.Addr, error) {
 	return ipAddr, nil
 }
 
-func (m *MatchDynamicClientIP) matchIP(r *http.Request, clientIP netip.Addr) bool {
+func (m *MatchDynamicRemoteIP) matchIP(r *http.Request, remoteIP netip.Addr) bool {
 	if m.Providers == nil {
-		// We have no provier, So we can't match anything
+		// We have no prover, So we can't match anything
 		return false
 	}
 
 	cidrs := m.Providers.GetIPRanges(r)
 
+	// TODO move this to an address map for performance
+	// https://stackoverflow.com/questions/53397369/fastest-way-search-ip-in-large-ip-subnet-list-on-golang
 	for _, ipRange := range cidrs {
-		if ipRange.Contains(clientIP) {
+		if ipRange.Contains(remoteIP) {
 			return true
 		}
 	}
@@ -134,8 +136,8 @@ func (m *MatchDynamicClientIP) matchIP(r *http.Request, clientIP netip.Addr) boo
 
 // Interface guards
 var (
-	_ caddy.Module             = (*MatchDynamicClientIP)(nil)
-	_ caddy.Provisioner        = (*MatchDynamicClientIP)(nil)
-	_ caddyfile.Unmarshaler    = (*MatchDynamicClientIP)(nil)
-	_ caddyhttp.RequestMatcher = (*MatchDynamicClientIP)(nil)
+	_ caddy.Module             = (*MatchDynamicRemoteIP)(nil)
+	_ caddy.Provisioner        = (*MatchDynamicRemoteIP)(nil)
+	_ caddyfile.Unmarshaler    = (*MatchDynamicRemoteIP)(nil)
+	_ caddyhttp.RequestMatcher = (*MatchDynamicRemoteIP)(nil)
 )

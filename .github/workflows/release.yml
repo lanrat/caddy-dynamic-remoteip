@@ -9,7 +9,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'tuzzmaniandevil/caddy-dynamic-clientip' }}
+    if: ${{ github.repository == 'lanrat/caddy-dynamic-remoteip' }}
     permissions:
       contents: write
 

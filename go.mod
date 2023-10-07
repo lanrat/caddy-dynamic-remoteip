@@ -1,4 +1,4 @@
-module github.com/tuzzmaniandevil/caddy-dynamic-clientip
+module github.com/lanrat/caddy-dynamic-remoteip
 
 go 1.21.1
 
