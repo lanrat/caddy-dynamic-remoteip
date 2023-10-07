@@ -1,4 +1,4 @@
-# Dynamic Client IP matcher for Caddy
+# Dynamic Remote IP matcher for Caddy
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/lanrat/graphs/caddy-dynamic-remoteip) [![Go Reference](https://pkg.go.dev/badge/github.com/lanrat/caddy-dynamic-remoteip.svg)](https://pkg.go.dev/github.com/lanrat/caddy-dynamic-remoteip) [![GoReportCard example](https://goreportcard.com/badge/github.com/lanrat/caddy-dynamic-remoteip)](https://goreportcard.com/report/github.com/lanrat/caddy-dynamic-remoteip) ![GitHub](https://img.shields.io/github/license/lanrat/caddy-dynamic-remoteip)
 
